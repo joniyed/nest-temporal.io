@@ -2,7 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NativeConnection, Worker } from '@temporalio/worker';
 import { getTemporalConnectionOptions } from './temporal.config';
-import { ActivityTypes, EmailActivities } from './activities';
+import { ActivityTypes, Activities } from './activities';
 
 @Injectable()
 export class TemporalService implements OnModuleInit, OnModuleDestroy {
@@ -11,7 +11,7 @@ export class TemporalService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly configService: ConfigService,
-    private readonly emailActivities: EmailActivities,
+    private readonly emailActivities: Activities,
   ) {
   }
 

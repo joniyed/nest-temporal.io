@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Client } from '@temporalio/client';
 
 @Module({
+  exports: [EmailService],
   imports: [],
   controllers: [EmailController],
   providers: [EmailService, ConfigService, Client],

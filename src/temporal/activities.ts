@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
-export class EmailActivities {
+export class Activities {
   constructor(private readonly emailService: EmailService) {
   }
 
