@@ -17,3 +17,9 @@ export async function sendEmailWorkflow(emails: string[]): Promise<void> {
     ),
   );
 }
+
+export async function readInboxWorkflow(): Promise<any> {
+  await activities.readInbox().catch((error) => {
+    console.error(`Failed to send email to ${error.message}:`);
+  });
+}

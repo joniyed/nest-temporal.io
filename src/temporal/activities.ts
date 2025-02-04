@@ -9,9 +9,14 @@ export class Activities {
   async sendEmail(email: string): Promise<void> {
     return this.emailService.sendEmail(email);
   }
+
+  async readInbox(): Promise<any> {
+    return await this.emailService.readInbox();
+  }
 }
 
 // Export activity type for type safety
 export interface ActivityTypes {
   sendEmail: (email: string) => Promise<void>;
+  readInbox: () => Promise<any>;
 }

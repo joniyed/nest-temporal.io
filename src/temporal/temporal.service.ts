@@ -2,7 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NativeConnection, Worker } from '@temporalio/worker';
 import { getTemporalConnectionOptions } from './temporal.config';
-import { ActivityTypes, Activities } from './activities';
+import { Activities, ActivityTypes } from './activities';
 
 @Injectable()
 export class TemporalService implements OnModuleInit, OnModuleDestroy {
@@ -24,6 +24,7 @@ export class TemporalService implements OnModuleInit, OnModuleDestroy {
 
     const activitiesImplementation: ActivityTypes = {
       sendEmail: (email: string) => this.emailActivities.sendEmail(email),
+      readInbox: () => this.emailActivities.readInbox(),
     };
 
     this.worker = await Worker.create({

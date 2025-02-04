@@ -26,7 +26,12 @@
     "@nestjs/platform-express": "^10.0.0",
     "@temporalio/client": "^1.11.6",
     "@temporalio/worker": "^1.11.6",
+    "fs-extra": "^11.3.0",
+    "imap-simple": "^5.1.0",
+    "mailparser": "^3.7.2",
     "nodemailer": "^6.10.0",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.16.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },
