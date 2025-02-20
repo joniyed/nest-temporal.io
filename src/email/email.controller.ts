@@ -30,9 +30,9 @@ export class EmailController {
   async readInbox() {
     const handle = await this.temporalClient.workflow.start(readInboxWorkflow, {
       taskQueue: 'email-queue',
-      workflowId: `read-inbox`,
+      workflowId: `read-inbox1`,
       args: null,
-      cronSchedule: '*/10 * * * * *', // Every minute
+      cronSchedule: '* * * * *', // Every minute
     });
 
     return {
