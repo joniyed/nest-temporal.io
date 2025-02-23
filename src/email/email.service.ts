@@ -75,28 +75,54 @@ export class EmailService implements OnModuleInit {
       await connection.openBox('INBOX');
 
       const searchCriteria = ['UNSEEN'];
-      const fetchOptions = { bodies: [''], markSeen: true };
+      const fetchOptions = { bodies: [''], markSeen: false };
       const messages = await connection.search(searchCriteria, fetchOptions);
 
       const emails: any[] = [];
+      const threads: { [threadId: string]: any[] } = {}; // To track thread replies
+
       for (const message of messages) {
         const all = message.parts.find((part) => part.which === '');
         if (!all || !all.body) continue;
 
         const parsed: ParsedMail = await simpleParser(all.body);
-        emails.push({
-          subject: parsed.subject,
-          from: parsed.from?.text,
-          body: parsed.text || parsed.html,
-        });
-        this.logger.log(`Fetched email: ${parsed.subject}`);
+        const threadId = parsed.headers.get('in-reply-to') || parsed.headers.get('references') || parsed.messageId;
+
+        // If threadId is missing, treat as a new thread
+        if (!threadId) {
+          this.logger.log(`Fetched new email: ${parsed.subject}`);
+          emails.push({
+            subject: parsed.subject,
+            from: parsed.from?.text,
+            body: parsed.text || parsed.html,
+            threadId: parsed.messageId,
+          });
+        } else {
+          // If it's a reply, add it to the existing thread
+          if (!threads[threadId]) {
+            threads[threadId] = [];
+          }
+          threads[threadId].push({
+            subject: parsed.subject,
+            from: parsed.from?.text,
+            body: parsed.text || parsed.html,
+          });
+          this.logger.log(`Fetched reply in thread: ${parsed.subject}`);
+        }
+      }
+
+      // Merge the thread replies back into the main emails list
+      for (const threadId in threads) {
+        const threadEmails = threads[threadId];
+        // You could also decide to group or display the thread differently here.
+        emails.push(...threadEmails);
       }
 
       await connection.end();
 
       if (emails.length > 0) {
         const pdfPath = await saveEmailsToPDF(emails);
-        this.logger.log(`📄 Emails saved to PDF: ${pdfPath}`);
+        this.logger.log(`📄 ${emails.length} Emails saved to PDF: ${pdfPath}`);
       }
 
       return emails;
@@ -105,4 +131,5 @@ export class EmailService implements OnModuleInit {
       return [];
     }
   }
+
 }
