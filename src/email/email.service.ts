@@ -69,7 +69,7 @@ export class EmailService implements OnModuleInit {
     }
   }
 
-  async readInbox(): Promise<Record<string, any[]>> {
+  async readInbox(): Promise<any[]> {
     try {
       this.logger.log("Connecting to IMAP server...");
       const connection = await imap.connect(this.imapConfig);
@@ -96,8 +96,8 @@ export class EmailService implements OnModuleInit {
             from: parsed.from?.value,
             to: parsed.to?.value,
             messageId: parsed.messageId,
-            inReplyTo: parsed.headers.get("In-Reply-To") || null,
-            references: parsed.headers.get("References") || null,
+            inReplyTo: parsed.inReplyTo,
+            references: parsed.references,
             subject: parsed.subject,
             date: parsed.date,
             body: parsed.text,
@@ -106,100 +106,15 @@ export class EmailService implements OnModuleInit {
       }
 
       // No change to readInbox up to this point; just pass to buildEmailThreads
-      const emailThreads = this.buildEmailThreads(allEmails);
 
-      if (emailThreads) {
-        const result = await saveEmailsToMSG(emailThreads);
-        console.log(result);
-      } else {
-        console.log("Failed to read emails.");
+      if (allEmails.length > 0) {
+        await saveEmailsToMSG(allEmails);
       }
 
-      return emailThreads;
+      return allEmails;
     } catch (error) {
       this.logger.error("Error while reading emails", error.message);
       return null;
     }
-  }
-
-  private buildEmailThreads(emails: any[]): Record<string, any[]> {
-    const threads: Record<string, any[]> = {};
-
-    // Step 1: Group emails by cleaned subject (ignoring Re:/Fwd:)
-    const subjectGroups = new Map<string, any[]>();
-    emails.forEach((email) => {
-      const cleanSubject =
-        email.subject?.replace(/^(Re:|Fwd:)\s*/i, "").trim() || "";
-      if (!subjectGroups.has(cleanSubject)) {
-        subjectGroups.set(cleanSubject, []);
-      }
-      subjectGroups.get(cleanSubject)!.push(email);
-    });
-
-    // Step 2: For each subject group, determine the root and build the thread
-    subjectGroups.forEach((group) => {
-      // Sort by date to find the earliest email as the root
-      group.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-      );
-
-      // The root is the earliest email in the group
-      const rootEmail = group[0];
-      const rootMessageId = rootEmail.messageId;
-
-      // Assign the entire group (including root) to the thread
-      threads[rootMessageId] = group;
-    });
-
-    // Step 3: If inReplyTo/references were available, refine further (optional)
-    // For your data, this isn’t needed since they’re all null, but keeping it for robustness
-    emails.forEach((email) => {
-      if (email.inReplyTo && threads[email.inReplyTo]) {
-        // If email replies to a known root, ensure it’s in that thread
-        if (!threads[email.inReplyTo].includes(email)) {
-          threads[email.inReplyTo].push(email);
-        }
-        // Remove from its own thread if it was incorrectly set as a root
-        if (threads[email.messageId] && email.messageId !== email.inReplyTo) {
-          delete threads[email.messageId];
-        }
-      }
-    });
-
-    return threads;
-  }
-
-  // Optional: Keep this method for future use with inReplyTo/references
-  private findRootEmailId(
-    email: any,
-    emailMap: Map<string, any>,
-    allEmails: any[],
-  ): string {
-    if (email.inReplyTo && emailMap.has(email.inReplyTo)) {
-      return email.inReplyTo;
-    }
-
-    if (email.references) {
-      const refIds = email.references.split(" ");
-      for (const refId of refIds) {
-        if (emailMap.has(refId)) {
-          return refId;
-        }
-      }
-    }
-
-    const cleanSubject = email.subject?.replace(/^(Re:|Fwd:)\s*/i, "").trim();
-    for (const otherEmail of allEmails) {
-      if (
-        otherEmail.messageId !== email.messageId &&
-        otherEmail.subject?.replace(/^(Re:|Fwd:)\s*/i, "").trim() ===
-          cleanSubject &&
-        new Date(otherEmail.date) < new Date(email.date)
-      ) {
-        return otherEmail.messageId;
-      }
-    }
-
-    return email.messageId;
   }
 }
