@@ -15,7 +15,7 @@ export class EmailService implements OnModuleInit {
     imap: {
       user: this.configService.get<string>("SMTP_USERNAME"),
       password: this.configService.get<string>("SMTP_PASSWORD"),
-      host: "imap.gmail.com",
+      host: this.configService.get<string>("SMTP_HOST"),
       port: 993,
       tls: true,
       tlsOptions: { rejectUnauthorized: false },
@@ -108,7 +108,7 @@ export class EmailService implements OnModuleInit {
             subject: parsed.subject,
             date: parsed.date,
             body: parsed.text,
-            attachments
+            attachments,
           });
         }
       }
