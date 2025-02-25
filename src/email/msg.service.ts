@@ -2,7 +2,13 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import { TextEncoder } from "util";
 
-// Interface to define the email structure
+// Interface for an attachment
+interface Attachment {
+  filename: string; // Name of the attachment file
+  content: Buffer | string; // Binary data or string content of the attachment
+}
+
+// Interface to define the email structure with attachments
 interface Email {
   folder: string;
   from: { address: string; name: string }[];
@@ -13,6 +19,7 @@ interface Email {
   subject: string;
   date: string;
   body: string;
+  attachments?: Attachment[]; // Optional array of attachments
 }
 
 // Helper function to build email threads based on references
@@ -52,7 +59,7 @@ const buildEmailThreads = (emails: Email[]): Record<string, Email[]> => {
   return threads;
 };
 
-// Main function to save emails
+// Main function to save emails and attachments
 const saveEmailsToMSG = async (emails: Email[]): Promise<string> => {
   const emailThreads = buildEmailThreads(emails);
 
@@ -62,7 +69,7 @@ const saveEmailsToMSG = async (emails: Email[]): Promise<string> => {
     const dirPath = path.join(__dirname, "..", "static", "msg", folderName);
     await fs.ensureDir(dirPath);
 
-    // Process each email in the thread and save in the root folder
+    // Process each email in the thread
     for (const email of threadEmails) {
       const from = email.from?.[0]?.address || "Unknown";
       const subject = email.subject || "No Subject";
@@ -74,15 +81,28 @@ const saveEmailsToMSG = async (emails: Email[]): Promise<string> => {
       const encoder = new TextEncoder();
       const buffer = encoder.encode(msgContent);
 
-      // Generate a unique filename using subject and timestamp
-      const fileName = `${subject.replace(/[^a-z0-9]/gi, "_")}_${new Date(email.date).getTime()}.msg`;
-      const filePath = path.join(dirPath, fileName);
+      // Generate a unique filename for the email
+      const timestamp = new Date(email.date).getTime();
+      const emailFileName = `${subject.replace(/[^a-z0-9]/gi, "_")}_${timestamp}.msg`;
+      const emailFilePath = path.join(dirPath, emailFileName);
 
-      await fs.writeFile(filePath, buffer);
+      // Save the email .msg file
+      await fs.writeFile(emailFilePath, buffer);
+
+      // Save attachments if they exist
+      if (email.attachments && email.attachments.length > 0) {
+        for (const attachment of email.attachments) {
+          const attachmentFileName = `${timestamp}_${attachment.filename.replace(/[^a-z0-9.]/gi, "_")}`;
+          const attachmentFilePath = path.join(dirPath, attachmentFileName);
+
+          // Write attachment content to disk (assuming content is Buffer or string)
+          await fs.writeFile(attachmentFilePath, attachment.content);
+        }
+      }
     }
   }
 
-  return "Emails saved successfully in respective root folders.";
+  return "Emails and attachments saved successfully in respective root folders.";
 };
 
 export { saveEmailsToMSG };

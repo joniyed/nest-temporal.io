@@ -91,6 +91,13 @@ export class EmailService implements OnModuleInit {
 
           const parsed: ParsedMail = await simpleParser(all.body);
 
+          // Extract attachments from parsed email
+          const attachments =
+            parsed.attachments?.map((attachment) => ({
+              filename: attachment.filename || "unnamed_attachment",
+              content: attachment.content, // Buffer containing attachment data
+            })) || [];
+
           allEmails.push({
             folder,
             from: parsed.from?.value,
@@ -101,6 +108,7 @@ export class EmailService implements OnModuleInit {
             subject: parsed.subject,
             date: parsed.date,
             body: parsed.text,
+            attachments
           });
         }
       }
